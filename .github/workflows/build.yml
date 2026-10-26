@@ -1,0 +1,40 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch: # Permite iniciar a compilação manualmente
+
+jobs:
+  build:
+    runs-on: macos-14 # Usa um Mac na nuvem da Apple/GitHub
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Selecionar Xcode 16
+        run: sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer
+
+      - name: Compilar a aplicação (Sem assinatura)
+        run: |
+          xcodebuild clean build \
+            -project FreeHabits.xcodeproj \
+            -scheme FreeHabits \
+            -configuration Release \
+            -arch arm64 \
+            -sdk iphoneos \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CONFIGURATION_BUILD_DIR=$PWD/build
+
+      - name: Empacotar em ficheiro .ipa
+        run: |
+          mkdir Payload
+          mv build/FreeHabits.app Payload/
+          zip -r FreeHabits.ipa Payload
+
+      - name: Disponibilizar ficheiro para download
+        uses: actions/upload-artifact@v4
+        with:
+          name: FreeHabits-IPA
+          path: FreeHabits.ipa
